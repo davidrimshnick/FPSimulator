@@ -4,6 +4,7 @@
 import json
 import tempfile
 import os
+import subprocess
 import pandas
 import numpy
 
@@ -13,7 +14,7 @@ import numpy
 FPConsolePath = r"C:\Users\david\source\repos\FactorPrismGit\FactorPrismDesktopWF\FPConsole\bin\x64\Debug\net48\FactorPrismConsole.exe"
 
 startMean = 10000
-startSD = 1000
+startSD = 2000
 effectSD = .01 # effect size small so interaction terms don't matter; centered at 0 and percent of original value as SD
 noiseSD = .001
 
@@ -45,9 +46,9 @@ def runSimulation(numModes, numCauses) -> dict:
     theSettingDict =  {
         "SelectedStartDateText": "2019-01-01",
         "SelectedEndDateText": "2020-01-01",
-        "DateFieldName": "yr",
+        "DateFieldName": "Date",
         "RollupSelection": "",
-        "DataFieldName": "units_sold",
+        "DataFieldName": "Units",
         "dataUnits": "Units",
         "CSVFilePath": "",
         "HierLabels": [ "H_A", "H_B"],
@@ -63,51 +64,63 @@ def runSimulation(numModes, numCauses) -> dict:
         "OutFilePath": ""
     }
 
+    temp_in_csv = tempfile.NamedTemporaryFile(mode="r", delete=False, suffix=".csv")
+    temp_in_csv.close()
+    temp_out_csv = tempfile.NamedTemporaryFile(mode="r", delete=False, suffix=".csv")
+    temp_out_csv.close()
+    temp_json = tempfile.NamedTemporaryFile(mode="w+", delete=False, suffix=".json")
+
     # Create Individual Run Data and Settings, Run FactorPrism, Tabulate Results
-    with tempfile.NamedTemporaryFile(mode="r") as temp_in_csv, tempfile.NamedTemporaryFile(mode="r") as temp_out_csv, tempfile.NamedTemporaryFile(mode="w+") as temp_json:
 
-        # Create starting data
-        df = baseDataDict[numModes].copy()
-        for i in range(len(df)):
-            df.loc[i, "Units"] = numpy.random.normal(startMean, startSD)
-        df_next = df.copy()
-        df_next["Date"] = nextDate
+    # Create starting data
+    df = baseDataDict[numModes].copy()
+    for i in range(len(df)):
+        df.loc[i, "Units"] = numpy.random.normal(startMean, startSD)
+    df_next = df.copy()
+    df_next["Date"] = nextDate
+    for i in range(len(df_next)):
+        df_next.loc[i, "Units"] *= (1 + numpy.random.normal(0, noiseSD))
+        df_next.loc[i, "Units"] = max(0, pandas.to_numeric(df_next.loc[i, "Units"]))
+
+    # Create effects, keep track of "actuals"
+    leveldf = LevelDict[numModes]
+    causeIndices = numpy.random.choice(len(leveldf), size=numCauses)
+
+    impactsdf = leveldf.copy()
+    impactsdf["Impact"] = 0
+
+    for ind in causeIndices:
+        causeLevel = leveldf.loc[[ind]]
+        causeImpactPct = numpy.random.normal(0, effectSD)
+
         for i in range(len(df_next)):
-            df_next.loc[i, "Units"] *= (1 + numpy.random.normal(0, noiseSD))
-            df_next.loc[i, "Units"] = max(0, pandas.to_numeric(df_next.loc[i, "Units"]))
+            if rowMatch(causeLevel, df_next.loc[[i]]):
+                impact = df_next.loc[i, "Units"] * causeImpactPct
+                df_next.loc[i, "Units"] = max(0, pandas.to_numeric(df_next.loc[i, "Units"]) + impact)
+                impactsdf.loc[i, "Impact"] += impact
 
-        # Create effects, keep track of "actuals"
-        leveldf = LevelDict[numModes]
-        causeIndices = numpy.random.choice(len(leveldf), size=numCauses)
+    df = df.append(df_next)
+    df.to_csv(temp_in_csv.name, index=False)
 
-        impactsdf = leveldf.copy()
-        impactsdf["Impact"] = 0
+    # Try for each solver method
+    outDict = {}
+    for solverMethod in solverMethods:
+        theSettingDict["CSVFilePath"] = r"" + temp_in_csv.name
+        theSettingDict["SolverMethodToUse"] = solverMethod
+        theSettingDict["OutFilePath"] = r"" + temp_out_csv.name
+        temp_json = open(temp_json.name, mode="w+")
+        json.dump(theSettingDict, temp_json)
+        temp_json.close()
+        subprocess.run(FPConsolePath + " " + temp_json.name)
+        outDict[solverMethod] = score_result(temp_out_csv.name)
 
-        for ind in causeIndices:
-            causeLevel = leveldf[ind]
-            causeImpactPct = numpy.random.normal(0, effectSD)
-
-            for i in range(len(df_next)):
-                if rowMatch(causeLevel, df_next.loc[i]):
-                    impact = df_next.loc[i, "Units"] * causeImpactPct
-                    df_next.loc[i, "Units"] = max(0, pandas.to_numeric(df_next.loc[i, "Units"]) + impact)
-                    impactsdf.loc[i, "Impact"] += impact
-
-        df = df.append(df_next)
-
-
-        # Try for each solver method
-        outDict = {}
-        for solverMethod in solverMethods:
-            theSettingDict["CSVFilePath"] = r"" + temp_in_csv.name
-            theSettingDict["SolverMethodToUse"] = solverMethod
-            theSettingDict["OutFilePath"] = r"" + temp_out_csv.name
-            json.dump(theSettingDict, temp_json)
-            os.system(FPConsolePath + " " + temp_json.name)
-            outDict[solverMethod] = score_result(temp_out_csv.name)
+    # clean up files
+    temp_json.close()
+    os.unlink(temp_in_csv.name)
+    os.unlink(temp_out_csv.name)
+    os.unlink(temp_json.name)
 
     return outDict
-
 
 
 
@@ -115,16 +128,11 @@ def score_result(resultCSVpath) -> float:
     return 0
     #TODO:
 
-def rowMatch(levelRow: pandas.Series, matchRow: pandas.Series) -> bool:
-    for col in levelRow.columns:
-        if (levelRow.loc[col] != openVal and levelRow.loc[col] != matchRow.loc[col]):
+def rowMatch(levelRow: pandas.DataFrame, matchRow: pandas.DataFrame) -> bool:
+    for col in range(len(levelRow.columns)):
+        if (levelRow.iloc[0, col] != openVal and levelRow.iloc[0, col] != matchRow.iloc[0, col]):
             return False
     return True
-
-
-
-
-
 
 
 # Run simulation over different parameters
@@ -136,7 +144,7 @@ for r in range(numRunsPerSetting):
             simResult = runSimulation(mn, c)
             for meth in solverMethods:
                 out_df.loc[i,"numModes"] = mn
-                out_df.loc[i,"numCauses"] = causesPerRun
+                out_df.loc[i,"numCauses"] = c
                 out_df.loc[i,"method"] = meth
                 out_df.loc[i,"accuracy"] = simResult[meth]
                 i=i+1
