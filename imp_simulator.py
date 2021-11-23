@@ -41,7 +41,7 @@ baseDataDict = {2: pandas.read_csv(SchemaDict[2]), 3: pandas.read_csv(SchemaDict
 LevelDict = {2: pandas.read_csv(LevelDict[2]), 3: pandas.read_csv(LevelDict[3])}
 
 # Simulation Module
-def runSimulation(numModes, numCauses) -> dict:
+def runSimulation(numModes : int, numCauses : int) -> dict:
     # Create base settings dictionary, to be edited on each run
     theSettingDict =  {
         "SelectedStartDateText": "2019-01-01",
@@ -87,7 +87,7 @@ def runSimulation(numModes, numCauses) -> dict:
     causeIndices = numpy.random.choice(len(leveldf), size=numCauses)
 
     impactsdf = leveldf.copy()
-    impactsdf["Impact"] = 0
+    impactsdf["Impact"] = 0.0
 
     for ind in causeIndices:
         causeLevel = leveldf.loc[[ind]]
@@ -112,7 +112,7 @@ def runSimulation(numModes, numCauses) -> dict:
         json.dump(theSettingDict, temp_json)
         temp_json.close()
         subprocess.run(FPConsolePath + " " + temp_json.name)
-        outDict[solverMethod] = score_result(temp_out_csv.name)
+        outDict[solverMethod] = score_result(temp_out_csv.name, impactsdf)
 
     # clean up files
     temp_json.close()
@@ -124,9 +124,28 @@ def runSimulation(numModes, numCauses) -> dict:
 
 
 
-def score_result(resultCSVpath) -> float:
-    return 0
-    #TODO:
+def score_result(resultCSVpath : str, trueImpactDF : pandas.DataFrame) -> float:
+    resultDF = pandas.read_csv(resultCSVpath)
+    resultDF.set_index("Description")
+    totalImpact = trueImpactDF["Impact"].sum()
+
+    capturedImpact = 0.0
+    for i in range(len(trueImpactDF)):
+        # Make description string to match whats in FP output
+        desc = ""
+        for j in range(len(trueImpactDF.columns)):
+            if trueImpactDF.iloc[0, j] != openVal:
+                if desc != "":
+                    desc += " - "
+                desc += trueImpactDF.iloc[i, j]
+        if (desc==""):
+            desc="Overall"
+
+        # TODO: NEED TO FIX THIS TO ACCOUNT FOR NEGATIVES
+        capturedImpact += min(trueImpactDF.loc[i, "Impact"].sum(), resultDF[desc].sum()) # sum() is cheap to_numeric
+
+    return capturedImpact / totalImpact
+
 
 def rowMatch(levelRow: pandas.DataFrame, matchRow: pandas.DataFrame) -> bool:
     for col in range(len(levelRow.columns)):
