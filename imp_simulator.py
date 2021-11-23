@@ -31,14 +31,15 @@ LevelDict = {2: r"C:\Users\david\Google Drive\Scuba\test datasets\other testing\
 openVal = "(Open)"
 nextDate = "1/1/2020"
 
+outPath = r"C:\Users\david\Desktop\simOut.csv"
 
 ############
 
-
+# Create base starting points
 baseDataDict = {2: pandas.read_csv(SchemaDict[2]), 3: pandas.read_csv(SchemaDict[3])}
 LevelDict = {2: pandas.read_csv(LevelDict[2]), 3: pandas.read_csv(LevelDict[3])}
 
-
+# Simulation Module
 def runSimulation(numModes, numCauses) -> dict:
     # Create base settings dictionary, to be edited on each run
     theSettingDict =  {
@@ -123,3 +124,21 @@ def rowMatch(levelRow: pandas.Series, matchRow: pandas.Series) -> bool:
 
 
 
+
+
+
+# Run simulation over different parameters
+i=0
+out_df = pandas.DataFrame(columns=["numModes", "numCauses", "method", "accuracy"])
+for r in range(numRunsPerSetting):
+    for mn in modeNums:
+        for c in causesPerRun:
+            simResult = runSimulation(mn, c)
+            for meth in solverMethods:
+                out_df.loc[i,"numModes"] = mn
+                out_df.loc[i,"numCauses"] = causesPerRun
+                out_df.loc[i,"method"] = meth
+                out_df.loc[i,"accuracy"] = simResult[meth]
+                i=i+1
+
+out_df.to_csv(outPath)
