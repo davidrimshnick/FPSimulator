@@ -7,6 +7,7 @@ import os
 import subprocess
 import pandas
 import numpy
+import timeout
 from shutil import copyfile
 
 ########
@@ -45,6 +46,7 @@ baseDataDict = {2: pandas.read_csv(SchemaDict[2]), 3: pandas.read_csv(SchemaDict
 LevelDict = {2: pandas.read_csv(LevelDict[2]), 3: pandas.read_csv(LevelDict[3])}
 
 # Simulation Module
+@timeout.timeout(10)
 def runSimulation(numModes : int, numCauses : int) -> dict:
     # Create base settings dictionary, to be edited on each run
     theSettingDict =  {
