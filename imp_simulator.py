@@ -113,7 +113,6 @@ def runSimulation(numModes : int, numCauses : int) -> dict:
         json.dump(theSettingDict, temp_json)
         temp_json.close()
         subprocess.run(FPConsolePath + " " + temp_json.name)
-        #subprocess.run(FPConsolePath + " " + temp_json.name, capture_output=True)
         outDict[solverMethod] = score_result(temp_out_csv.name, impactsdf)
 
     # clean up files
@@ -144,7 +143,7 @@ def score_result(resultCSVpath : str, trueImpactDF : pandas.DataFrame) -> float:
 
         trueImpact = trueImpactDF.loc[i, "Impact"].sum()
         thisImpact = resultDF[resultDF["Description"]==desc]["Net Impact"].sum() # sum() is cheap to_numeric
-        if abs(trueImpact)/trueImpact == abs(thisImpact)/thisImpact: # need to go in same direction
+        if trueImpact != 0 and thisImpact !=0 and abs(trueImpact)/trueImpact == abs(thisImpact)/thisImpact: # need to go in same direction
             capturedAbsImpact += min(abs(trueImpact), abs(thisImpact))
 
     return capturedAbsImpact / totalAbsImpact
