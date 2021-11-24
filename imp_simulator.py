@@ -179,7 +179,7 @@ def rowMatch(levelRow: pandas.DataFrame, matchRow: pandas.DataFrame) -> bool:
 totalRuns = numRunsPerSetting * len(modeNums) * len(causesPerRun) * len(solverMethods)
 i=0
 out_df = pandas.DataFrame(columns=["numModes", "numCauses", "method", "accuracy"])
-for r in range(numRunsPerSetting):
+while i < numRunsPerSetting:
     for mn in modeNums:
         for c in causesPerRun:
             print("----- Run " + str(i+1) + " of " + str(totalRuns) + ".")
