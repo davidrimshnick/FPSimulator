@@ -19,7 +19,7 @@ effectSD = .01 # effect size small so interaction terms don't matter; centered a
 noiseSD = .001
 
 causesPerRun = [1, 3, 5]
-numRunsPerSetting = 1000
+numRunsPerSetting = 100
 solverMethods = ["GreedyTopDown", "GreedyBottomUp", "FPLP"]
 modeNums = [2, 3]
 
@@ -162,12 +162,15 @@ out_df = pandas.DataFrame(columns=["numModes", "numCauses", "method", "accuracy"
 for r in range(numRunsPerSetting):
     for mn in modeNums:
         for c in causesPerRun:
-            simResult = runSimulation(mn, c)
-            for meth in solverMethods:
-                out_df.loc[i,"numModes"] = mn
-                out_df.loc[i,"numCauses"] = c
-                out_df.loc[i,"method"] = meth
-                out_df.loc[i,"accuracy"] = simResult[meth]
-                i=i+1
+            try:
+                simResult = runSimulation(mn, c)
+                for meth in solverMethods:
+                    out_df.loc[i,"numModes"] = mn
+                    out_df.loc[i,"numCauses"] = c
+                    out_df.loc[i,"method"] = meth
+                    out_df.loc[i,"accuracy"] = simResult[meth]
+                    i=i+1
+            except:
+                pass
 
 out_df.to_csv(outPath)
