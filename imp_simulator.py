@@ -19,7 +19,7 @@ effectSD = .01 # effect size small so interaction terms don't matter; centered a
 noiseSD = .001
 
 causesPerRun = [1, 3, 5]
-numRunsPerSetting = 1 #1000
+numRunsPerSetting = 1000
 solverMethods = ["GreedyTopDown", "GreedyBottomUp", "FPLP"]
 modeNums = [2, 3]
 
@@ -61,6 +61,7 @@ def runSimulation(numModes : int, numCauses : int) -> dict:
         ],
         "IsStaticAnalysis": False,
         "SolverMethodToUse": "",
+        "FactorCSVOutputOverride": True,
         "OutFilePath": ""
     }
 
@@ -112,6 +113,7 @@ def runSimulation(numModes : int, numCauses : int) -> dict:
         json.dump(theSettingDict, temp_json)
         temp_json.close()
         subprocess.run(FPConsolePath + " " + temp_json.name)
+        #subprocess.run(FPConsolePath + " " + temp_json.name, capture_output=True)
         outDict[solverMethod] = score_result(temp_out_csv.name, impactsdf)
 
     # clean up files
@@ -126,14 +128,13 @@ def runSimulation(numModes : int, numCauses : int) -> dict:
 
 def score_result(resultCSVpath : str, trueImpactDF : pandas.DataFrame) -> float:
     resultDF = pandas.read_csv(resultCSVpath)
-    resultDF.set_index("Description")
-    totalImpact = trueImpactDF["Impact"].sum()
+    totalAbsImpact = trueImpactDF["Impact"].abs().sum()
 
-    capturedImpact = 0.0
+    capturedAbsImpact = 0.0
     for i in range(len(trueImpactDF)):
         # Make description string to match whats in FP output
         desc = ""
-        for j in range(len(trueImpactDF.columns)):
+        for j in range(4): # exclude last column because its the impact one
             if trueImpactDF.iloc[0, j] != openVal:
                 if desc != "":
                     desc += " - "
@@ -141,14 +142,16 @@ def score_result(resultCSVpath : str, trueImpactDF : pandas.DataFrame) -> float:
         if (desc==""):
             desc="Overall"
 
-        # TODO: NEED TO FIX THIS TO ACCOUNT FOR NEGATIVES
-        capturedImpact += min(trueImpactDF.loc[i, "Impact"].sum(), resultDF[desc].sum()) # sum() is cheap to_numeric
+        trueImpact = trueImpactDF.loc[i, "Impact"].sum()
+        thisImpact = resultDF[resultDF["Description"]==desc]["Net Impact"].sum() # sum() is cheap to_numeric
+        if abs(trueImpact)/trueImpact == abs(thisImpact)/thisImpact: # need to go in same direction
+            capturedAbsImpact += min(abs(trueImpact), abs(thisImpact))
 
-    return capturedImpact / totalImpact
+    return capturedAbsImpact / totalAbsImpact
 
 
 def rowMatch(levelRow: pandas.DataFrame, matchRow: pandas.DataFrame) -> bool:
-    for col in range(len(levelRow.columns)):
+    for col in range(4):
         if (levelRow.iloc[0, col] != openVal and levelRow.iloc[0, col] != matchRow.iloc[0, col]):
             return False
     return True
