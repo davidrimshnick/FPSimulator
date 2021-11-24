@@ -15,7 +15,7 @@ FPConsolePath = r"C:\Users\david\source\repos\FactorPrismGit\FactorPrismDesktopW
 
 startMean = 10000
 startSD = 2000
-effectSD = .01 # effect size small so interaction terms don't matter; centered at 0 and percent of original value as SD
+effectSD = .05 # effect size small so interaction terms don't matter; centered at 0 and percent of original value as SD
 noiseSD = .001
 
 causesPerRun = [1, 3, 5]
