@@ -19,7 +19,7 @@ effectSD = .01 # effect size small so interaction terms don't matter; centered a
 noiseSD = .001
 
 causesPerRun = [1, 3, 5]
-numRunsPerSetting = 100
+numRunsPerSetting = 1000
 solverMethods = ["GreedyTopDown", "GreedyBottomUp", "FPLP"]
 modeNums = [2, 3]
 
@@ -65,11 +65,11 @@ def runSimulation(numModes : int, numCauses : int) -> dict:
         "OutFilePath": ""
     }
 
-    temp_in_csv = tempfile.NamedTemporaryFile(mode="r", delete=False, suffix=".csv")
+    temp_in_csv = tempfile.NamedTemporaryFile(mode="r", delete=False, suffix=".csv", dir=r"Y:\TEMP")
     temp_in_csv.close()
-    temp_out_csv = tempfile.NamedTemporaryFile(mode="r", delete=False, suffix=".csv")
+    temp_out_csv = tempfile.NamedTemporaryFile(mode="r", delete=False, suffix=".csv", dir=r"Y:\TEMP")
     temp_out_csv.close()
-    temp_json = tempfile.NamedTemporaryFile(mode="w+", delete=False, suffix=".json")
+    temp_json = tempfile.NamedTemporaryFile(mode="w+", delete=False, suffix=".json", dir=r"Y:\TEMP")
 
     # Create Individual Run Data and Settings, Run FactorPrism, Tabulate Results
 
