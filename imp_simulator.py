@@ -7,6 +7,7 @@ import os
 import subprocess
 import pandas
 import numpy
+from shutil import copyfile
 
 ########
 ### Paramaters
@@ -18,10 +19,10 @@ startSD = 2000
 effectSD = .05 # effect size small so interaction terms don't matter; centered at 0 and percent of original value as SD
 noiseSD = .001
 
-causesPerRun = [1, 3, 5]
-numRunsPerSetting = 1000
+causesPerRun = [1] #[1, 3, 5]
+numRunsPerSetting = 1 #1000
 solverMethods = ["GreedyTopDown", "GreedyBottomUp", "FPLP"]
-modeNums = [2, 3]
+modeNums = [2] #[2, 3]
 
 SchemaDict = {2: r"C:\Users\david\Google Drive\Scuba\test datasets\other testing\Python Experiments\Schema_2Modes.csv",
                 3: r"C:\Users\david\Google Drive\Scuba\test datasets\other testing\Python Experiments\Schema_3Modes.csv"}
@@ -33,6 +34,9 @@ openVal = "(Open)"
 nextDate = "1/1/2020"
 
 outPath = r"C:\Users\david\Desktop\simOut.csv"
+
+# Create random number generator, use seed
+RNG = numpy.random.default_rng(2021)
 
 ############
 
@@ -76,29 +80,34 @@ def runSimulation(numModes : int, numCauses : int) -> dict:
     # Create starting data
     df = baseDataDict[numModes].copy()
     for i in range(len(df)):
-        df.loc[i, "Units"] = numpy.random.normal(startMean, startSD)
+        df.loc[i, "Units"] = RNG.normal(startMean, startSD)
     df_next = df.copy()
     df_next["Date"] = nextDate
     for i in range(len(df_next)):
-        df_next.loc[i, "Units"] *= (1 + numpy.random.normal(0, noiseSD))
+        df_next.loc[i, "Units"] *= (1 + RNG.normal(0, noiseSD))
         df_next.loc[i, "Units"] = max(0, pandas.to_numeric(df_next.loc[i, "Units"]))
 
     # Create effects, keep track of "actuals"
     leveldf = LevelDict[numModes]
-    causeIndices = numpy.random.choice(len(leveldf), size=numCauses)
+    causeIndices = RNG.choice(len(leveldf), size=numCauses)
 
     impactsdf = leveldf.copy()
     impactsdf["Impact"] = 0.0
 
     for ind in causeIndices:
         causeLevel = leveldf.loc[[ind]]
-        causeImpactPct = numpy.random.normal(0, effectSD)
+        causeImpactPct = RNG.normal(0, effectSD)
+        totalCauseImpact = 0.0
 
         for i in range(len(df_next)):
             if rowMatch(causeLevel, df_next.loc[[i]]):
-                impact = df_next.loc[i, "Units"] * causeImpactPct
-                df_next.loc[i, "Units"] = max(0, pandas.to_numeric(df_next.loc[i, "Units"]) + impact)
-                impactsdf.loc[i, "Impact"] += impact
+                base_impact = df_next.loc[i, "Units"] * causeImpactPct
+                newVal = max(0, pandas.to_numeric(df_next.loc[i, "Units"]) + base_impact)
+                impact = newVal - df_next.loc[i, "Units"] # in case it was truncated
+                df_next.loc[i, "Units"] =  newVal
+                totalCauseImpact += impact
+
+        impactsdf.loc[ind, "Impact"] = totalCauseImpact
 
     df = df.append(df_next)
     df.to_csv(temp_in_csv.name, index=False)
@@ -114,6 +123,14 @@ def runSimulation(numModes : int, numCauses : int) -> dict:
         temp_json.close()
         subprocess.run(FPConsolePath + " " + temp_json.name)
         outDict[solverMethod] = score_result(temp_out_csv.name, impactsdf)
+
+        # Debugging
+        copyfile(temp_out_csv.name, (r"Y:\Temp\out_" + solverMethod +".csv"))
+
+    # Debugging
+    impactsdf.to_csv(r"Y:\Temp\realimpacts.csv")
+
+
 
     # clean up files
     temp_json.close()
@@ -134,7 +151,7 @@ def score_result(resultCSVpath : str, trueImpactDF : pandas.DataFrame) -> float:
         # Make description string to match whats in FP output
         desc = ""
         for j in range(4): # exclude last column because its the impact one
-            if trueImpactDF.iloc[0, j] != openVal:
+            if trueImpactDF.iloc[i, j] != openVal:
                 if desc != "":
                     desc += " - "
                 desc += trueImpactDF.iloc[i, j]
