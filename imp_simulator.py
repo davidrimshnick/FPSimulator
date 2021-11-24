@@ -157,6 +157,7 @@ def rowMatch(levelRow: pandas.DataFrame, matchRow: pandas.DataFrame) -> bool:
 
 
 # Run simulation over different parameters
+totalRuns = numRunsPerSetting * len(modeNums) * len(causesPerRun) * len(solverMethods)
 i=0
 out_df = pandas.DataFrame(columns=["numModes", "numCauses", "method", "accuracy"])
 for r in range(numRunsPerSetting):
@@ -170,6 +171,7 @@ for r in range(numRunsPerSetting):
                     out_df.loc[i,"method"] = meth
                     out_df.loc[i,"accuracy"] = simResult[meth]
                     i=i+1
+                    print("Run " + i + "of " + totalRuns)
             except:
                 pass
 
