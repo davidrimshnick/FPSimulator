@@ -163,7 +163,7 @@ out_df = pandas.DataFrame(columns=["numModes", "numCauses", "method", "accuracy"
 for r in range(numRunsPerSetting):
     for mn in modeNums:
         for c in causesPerRun:
-            print("----- Run " + str(i) + " of " + str(totalRuns) + ".")
+            print("----- Run " + str(i+1) + " of " + str(totalRuns) + ".")
             try:
                 simResult = runSimulation(mn, c)
                 for meth in solverMethods:
