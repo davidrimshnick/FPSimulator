@@ -19,10 +19,10 @@ startSD = 2000
 effectSD = .05 # effect size small so interaction terms don't matter; centered at 0 and percent of original value as SD
 noiseSD = .001
 
-causesPerRun = [1] #[1, 3, 5]
-numRunsPerSetting = 1 #1000
+causesPerRun = [1, 3, 5]
+numRunsPerSetting = 100
 solverMethods = ["GreedyTopDown", "GreedyBottomUp", "FPLP"]
-modeNums = [2] #[2, 3]
+modeNums = [2, 3]
 
 SchemaDict = {2: r"C:\Users\david\Google Drive\Scuba\test datasets\other testing\Python Experiments\Schema_2Modes.csv",
                 3: r"C:\Users\david\Google Drive\Scuba\test datasets\other testing\Python Experiments\Schema_3Modes.csv"}
@@ -125,10 +125,10 @@ def runSimulation(numModes : int, numCauses : int) -> dict:
         outDict[solverMethod] = score_result(temp_out_csv.name, impactsdf)
 
         # Debugging
-        copyfile(temp_out_csv.name, (r"Y:\Temp\out_" + solverMethod +".csv"))
+        # copyfile(temp_out_csv.name, (r"Y:\Temp\out_" + solverMethod +".csv"))
 
     # Debugging
-    impactsdf.to_csv(r"Y:\Temp\realimpacts.csv")
+    # impactsdf.to_csv(r"Y:\Temp\realimpacts.csv")
 
 
 
