@@ -8,6 +8,8 @@ import subprocess
 import pandas
 import numpy
 import timeout
+import time
+import gc
 from shutil import copyfile
 
 ########
@@ -37,7 +39,7 @@ nextDate = "1/1/2020"
 outPath = r"C:\Users\david\Desktop\simOut.csv"
 
 # Create random number generator, use seed
-RNG = numpy.random.default_rng(2021)
+RNG = numpy.random.default_rng(2022)
 
 ############
 
@@ -124,6 +126,7 @@ def runSimulation(numModes : int, numCauses : int) -> dict:
         json.dump(theSettingDict, temp_json)
         temp_json.close()
         subprocess.run(FPConsolePath + " " + temp_json.name)
+        gc.collect()
         outDict[solverMethod] = score_result(temp_out_csv.name, impactsdf)
 
         # Debugging
@@ -192,6 +195,7 @@ while i < totalRuns:
                     out_df.loc[i,"accuracy"] = simResult[meth]
                     i=i+1
             except:
-                pass
+                time.sleep(5) # to give database time to settle down
+                continue
 
 out_df.to_csv(outPath)
