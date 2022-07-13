@@ -15,7 +15,7 @@ from shutil import copyfile
 ########
 ### Paramaters
 
-FPConsolePath = r"C:\Users\david\source\repos\FactorPrismGit\FactorPrismDesktopWF\FPConsole\bin\x64\Debug\net48\FactorPrismConsole.exe"
+FPConsolePath = r"G:\My Drive\Scuba\Publish Location\XPConsoleProfiles\win-x64\FactorPrismConsoleXP.exe"
 
 startMean = 10000
 startSD = 2000
@@ -24,19 +24,20 @@ noiseSD = .001
 
 causesPerRun = [1, 3, 5]
 numRunsPerSetting = 100
-solverMethods = ["GreedyTopDown", "GreedyBottomUp", "FPLP"]
+solverMethods = ["GreedyTopDown", "GreedyBottomUp", "FPLP", "FPIteratedRegression"]
 modeNums = [2, 3]
 
-SchemaDict = {2: r"C:\Users\david\Google Drive\Scuba\test datasets\other testing\Python Experiments\Schema_2Modes.csv",
-                3: r"C:\Users\david\Google Drive\Scuba\test datasets\other testing\Python Experiments\Schema_3Modes.csv"}
+SchemaDict = {2: r"G:\My Drive\Scuba\test datasets\other testing\Python Experiments\Schema_2Modes.csv",
+                3: r"G:\My Drive\Scuba\test datasets\other testing\Python Experiments\Schema_3Modes.csv"}
 
-LevelDict = {2: r"C:\Users\david\Google Drive\Scuba\test datasets\other testing\Python Experiments\Levels_2Modes.csv",
-                3: r"C:\Users\david\Google Drive\Scuba\test datasets\other testing\Python Experiments\Levels_3Modes.csv"}
+LevelDict = {2: r"G:\My Drive\Scuba\test datasets\other testing\Python Experiments\Levels_2Modes.csv",
+                3: r"G:\My Drive\Scuba\test datasets\other testing\Python Experiments\Levels_3Modes.csv"}
 
 openVal = "(Open)"
 nextDate = "1/1/2020"
 
-outPath = r"C:\Users\david\Desktop\simOut.csv"
+outPath = r"C:\Users\david\OneDrive\Desktop\simOut.csv"
+tempLoc = r"Z:\TEMP"
 
 # Create random number generator, use seed
 RNG = numpy.random.default_rng(2022)
@@ -73,11 +74,11 @@ def runSimulation(numModes : int, numCauses : int) -> dict:
         "OutFilePath": ""
     }
 
-    temp_in_csv = tempfile.NamedTemporaryFile(mode="r", delete=False, suffix=".csv", dir=r"Y:\TEMP")
+    temp_in_csv = tempfile.NamedTemporaryFile(mode="r", delete=False, suffix=".csv", dir=tempLoc)
     temp_in_csv.close()
-    temp_out_csv = tempfile.NamedTemporaryFile(mode="r", delete=False, suffix=".csv", dir=r"Y:\TEMP")
+    temp_out_csv = tempfile.NamedTemporaryFile(mode="r", delete=False, suffix=".csv", dir=tempLoc)
     temp_out_csv.close()
-    temp_json = tempfile.NamedTemporaryFile(mode="w+", delete=False, suffix=".json", dir=r"Y:\TEMP")
+    temp_json = tempfile.NamedTemporaryFile(mode="w+", delete=False, suffix=".json", dir=tempLoc)
 
     # Create Individual Run Data and Settings, Run FactorPrism, Tabulate Results
 
