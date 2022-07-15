@@ -2,6 +2,7 @@
 # Measure FP ability to test versus greedy algorithms
 
 from asyncio.subprocess import DEVNULL
+from cgitb import reset
 import json
 import tempfile
 import os
@@ -130,7 +131,9 @@ def runSimulation(numModes : int, numCauses : int) -> dict:
         temp_json = open(temp_json.name, mode="w+")
         json.dump(theSettingDict, temp_json)
         temp_json.close()
+
         subprocess.run(FPConsolePath + " " + temp_json.name)
+
         gc.collect()
         outDict[solverMethod] = score_result(temp_out_csv.name, impactsdf)
 
