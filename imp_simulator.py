@@ -20,10 +20,11 @@ FPConsolePath = r"G:\My Drive\Scuba\Publish Location\XPConsoleProfiles\win-x64\F
 startMean = 10000
 startSD = 2000
 effectSD = .05 # effect size small so interaction terms don't matter; centered at 0 and percent of original value as SD
+effectTermSDPct = .1 # how big the effect differs in subcategories as percent of effect
 noiseSD = .001
 
 causesPerRun = [1, 3, 5]
-numRunsPerSetting = 100
+numRunsPerSetting = 1000
 solverMethods = ["GreedyTopDown", "GreedyBottomUp", "FPLP", "FPIteratedRegression"]
 modeNums = [2, 3]
 
@@ -106,7 +107,8 @@ def runSimulation(numModes : int, numCauses : int) -> dict:
 
         for i in range(len(df_next)):
             if rowMatch(causeLevel, df_next.loc[[i]]):
-                base_impact = df_next.loc[i, "Units"] * causeImpactPct
+                # base_impact = df_next.loc[i, "Units"] * causeImpactPct
+                base_impact = df_next.loc[i, "Units"] * RNG.normal(causeImpactPct, abs(causeImpactPct) * effectTermSDPct)
                 newVal = max(0, pandas.to_numeric(df_next.loc[i, "Units"]) + base_impact)
                 impact = newVal - df_next.loc[i, "Units"] # in case it was truncated
                 df_next.loc[i, "Units"] =  newVal
@@ -114,7 +116,8 @@ def runSimulation(numModes : int, numCauses : int) -> dict:
 
         impactsdf.loc[ind, "Impact"] = totalCauseImpact
 
-    df = df.append(df_next)
+    #df = df.append(df_next)
+    df = pandas.concat([df,df_next], axis=0)
     df.to_csv(temp_in_csv.name, index=False)
 
     # Try for each solver method
