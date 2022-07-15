@@ -1,6 +1,7 @@
 # Simulate Hidden Causes
 # Measure FP ability to test versus greedy algorithms
 
+from asyncio.subprocess import DEVNULL
 import json
 import tempfile
 import os
