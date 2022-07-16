@@ -18,7 +18,10 @@ import string
 from shutil import copyfile
 
 ########
-### Paramaters
+def randString(numChars):
+    return ''.join(random.choices(string.ascii_uppercase, k=numChars))
+
+### Paramaters to alter
 
 FPConsolePath = r"G:\My Drive\Scuba\Publish Location\XPConsoleProfiles\win-x64\FactorPrismConsoleXP.exe"
 
@@ -29,12 +32,15 @@ effectTermSDPct = .1 # how big the effect differs in subcategories as percent of
 noiseSD = .001
 
 causesPerRun = [1, 3, 5]
-numRunsPerSetting = 100
+numRunsPerSetting = 2
 solverMethods = ["GreedyTopDown", "GreedyBottomUp", "FPLP", "FPIteratedRegression"]
-modeNums = [2, 3, 5, 10]
+modeNums = [2, 3, 5]
+Hier1Size = 3
+Hier2Size = 2
 
-#Hiers = [["A", "AA", "AAA"],["B", "BB", "BBB"]]
-Hiers = [["A", "AA"],["B", "BB"]]
+
+##### Shouldn't need to alter below
+Hiers = [[randString(5) for x in range(Hier1Size)],[randString(5) for x in range(Hier1Size)]]
 colNames = Hiers[0] + Hiers[1]
 openVal = "(Open)"
 startDate = "1/1/2019"
@@ -47,6 +53,17 @@ tempLoc = r"Z:\TEMP"
 # Create random number generator, use seed
 RNG = numpy.random.default_rng(2022)
 ############
+
+
+### Helpers to create JSON
+
+def fillBlankList(partList, listLen):
+    outList = [""] * listLen
+    for i in range(len(partList)):
+        outList[i] = partList[i]
+    return outList
+
+
 
 baseDataDict = {}
 LevelDict = {}
@@ -108,15 +125,8 @@ def createBaseData():
 
 
 
-
-
-
-
-
-
-
 # Simulation Module
-@timeout.timeout(0)
+@timeout.timeout(200)
 def runSimulation(numModes : int, numCauses : int) -> dict:
     # Create base settings dictionary, to be edited on each run
     theSettingDict =  {
@@ -127,10 +137,10 @@ def runSimulation(numModes : int, numCauses : int) -> dict:
         "DataFieldName": "Units",
         "dataUnits": "Units",
         "CSVFilePath": "",
-        "HierLabels": [ "H_A", "H_B"],
+        "HierLabels": [randString(5) for x in range(len(Hiers))],
         "FullHierTable": [
-            [ "A", "AA", "", "", "" ],
-            [ "B", "BB", "", "", "" ],
+            fillBlankList(Hiers[0], 5),
+            fillBlankList(Hiers[1], 5),
             [ "", "", "", "", "" ],
             [ "", "", "", "", "" ],
             [ "", "", "", "", "" ]
@@ -248,11 +258,6 @@ def rowMatch(levelRow: pandas.DataFrame, matchRow: pandas.DataFrame) -> bool:
         if (levelRow.iloc[0, col] != openVal and levelRow.iloc[0, col] != matchRow.iloc[0, col]):
             return False
     return True
-
-
-def randString(numChars):
-    return ''.join(random.choices(string.ascii_uppercase, k=numChars))
-
 
 
 # Run simulation over different parameters
