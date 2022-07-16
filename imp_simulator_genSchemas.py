@@ -16,6 +16,7 @@ import pandas as pd
 import random
 import string
 from shutil import copyfile
+from datetime import datetime
 
 ########
 def randString(numChars):
@@ -32,12 +33,17 @@ effectTermSDPct = .1 # how big the effect differs in subcategories as percent of
 noiseSD = .001
 
 causesPerRun = [1, 3, 5]
-numRunsPerSetting = 2
+numRunsPerSetting = 1
 solverMethods = ["GreedyTopDown", "GreedyBottomUp", "FPLP", "FPIteratedRegression"]
-modeNums = [2, 3, 5]
-Hier1Size = 3
+modeNums = [2, 3] #5
+Hier1Size = 2
 Hier2Size = 2
 
+fn = (
+    datetime.now().strftime("%Y%m%d-%H%M%S") + "_runsper-" + str(numRunsPerSetting) +
+        "_h1s-" + str(Hier1Size) + "_h2s-" + str(Hier2Size)
+)
+outPath = r"G:\My Drive\Scuba\test datasets\other testing\Python Experiments\rawOuts\simOut_" + fn + ".csv"
 
 ##### Shouldn't need to alter below
 Hiers = [[randString(5) for x in range(Hier1Size)],[randString(5) for x in range(Hier1Size)]]
@@ -46,8 +52,6 @@ openVal = "(Open)"
 startDate = "1/1/2019"
 nextDate = "1/1/2020"
 randFieldSize = 10
-
-outPath = r"C:\Users\david\OneDrive\Desktop\simOut.csv"
 tempLoc = r"Z:\TEMP"
 
 # Create random number generator, use seed
