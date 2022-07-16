@@ -33,11 +33,11 @@ effectTermSDPct = .1 # how big the effect differs in subcategories as percent of
 noiseSD = .001
 
 causesPerRun = [1, 3, 5]
-numRunsPerSetting = 1
+numRunsPerSetting = 100
 solverMethods = ["GreedyTopDown", "GreedyBottomUp", "FPLP", "FPIteratedRegression"]
 modeNums = [2, 3] #5
-Hier1Size = 2
-Hier2Size = 2
+Hier1Size = 3
+Hier2Size = 3
 
 fn = (
     datetime.now().strftime("%Y%m%d-%H%M%S") + "_runsper-" + str(numRunsPerSetting) +
