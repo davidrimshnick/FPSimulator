@@ -12,6 +12,9 @@ import numpy
 import timeout
 import time
 import gc
+import pandas as pd
+import random
+import string
 from shutil import copyfile
 
 ########
@@ -28,28 +31,96 @@ noiseSD = .001
 causesPerRun = [1, 3, 5]
 numRunsPerSetting = 1000
 solverMethods = ["GreedyTopDown", "GreedyBottomUp", "FPLP", "FPIteratedRegression"]
-modeNums = [2, 3]
+modeNums = [2, 3, 5, 10]
 
-SchemaDict = {2: r"G:\My Drive\Scuba\test datasets\other testing\Python Experiments\Schema_2Modes.csv",
-                3: r"G:\My Drive\Scuba\test datasets\other testing\Python Experiments\Schema_3Modes.csv"}
-
-LevelDictFiles = {2: r"G:\My Drive\Scuba\test datasets\other testing\Python Experiments\Levels_2Modes.csv",
-                3: r"G:\My Drive\Scuba\test datasets\other testing\Python Experiments\Levels_3Modes.csv"}
-
+Hiers = [["A", "AA", "AAA"],["B", "BB", "BBB"]]
+colNames = Hiers[0] + Hiers[1]
 openVal = "(Open)"
+firstDate = "1/1/2019"
 nextDate = "1/1/2020"
+randFieldSize = 10
 
 outPath = r"C:\Users\david\OneDrive\Desktop\simOut.csv"
 tempLoc = r"Z:\TEMP"
 
 # Create random number generator, use seed
 RNG = numpy.random.default_rng(2022)
-
 ############
 
-# Create base starting points
-baseDataDict = {2: pandas.read_csv(SchemaDict[2]), 3: pandas.read_csv(SchemaDict[3])}
-LevelDict = {2: pandas.read_csv(LevelDictFiles[2]), 3: pandas.read_csv(LevelDictFiles[3])}
+baseDataDict = {}
+levelDict = {}
+
+def createBaseData():
+
+    baseDataDict = {}
+    levelDict = {}
+
+    for m in modeNums:
+
+        def DictListCross(dict1list : list, dict2list : list):
+            outDictList = []
+            for d1 in dict1list:
+                for d2 in dict2list:
+                    outDictLine = d1 | d2
+                    outDictList.append(outDictLine)
+            return outDictList
+
+        def makeNewRow(curRow, curIndex):
+            HierLevelRows.append(curRow.copy())
+
+            for i in range(m):
+                newRow = curRow.copy()
+                newRow[h[curIndex]] = randString(randFieldSize)
+
+                if (curIndex==(len(h)-1)):
+                    HierLevelRows.append(newRow.copy())
+                    HierDataRows.append(newRow.copy())
+                else:
+                    makeNewRow(newRow, curIndex+1)
+
+        # make recurrent call to make these rows
+
+        HiersLevelRows = {}
+        HiersDataRows = {}
+
+        for hnum in range(2):
+            h = Hiers[hnum]
+            HierLevelRows = []
+            HierDataRows = []
+            startRow = dict.fromkeys(h, openVal)
+            makeNewRow(startRow,0)
+
+            HiersLevelRows[hnum] = HierLevelRows
+            HiersDataRows[hnum] = HierDataRows
+
+        baseDataRows = DictListCross(HiersLevelRows[0], HiersLevelRows[1])
+        levelRows = DictListCross(HiersDataRows[0], HiersDataRows[1])
+
+
+        # create dataframes from list of dicts (https://www.geeksforgeeks.org/create-a-pandas-dataframe-from-list-of-dicts/)
+
+        startDataDict = pd.DataFrame(baseDataRows)
+        startDataDict["Units"] = 0
+
+        d1 = startDataDict.copy()
+        d2 = startDataDict.copy()
+        d1["Date"] = firstDate
+        d2["Date"] = nextDate
+        baseDataDict[m] = pd.concat([d1,d2],axis=0)
+
+        levelDict[m] = pd.DataFrame(levelRows)
+
+
+
+
+
+
+
+
+
+
+
+
 
 # Simulation Module
 @timeout.timeout(10)
@@ -65,8 +136,8 @@ def runSimulation(numModes : int, numCauses : int) -> dict:
         "CSVFilePath": "",
         "HierLabels": [ "H_A", "H_B"],
         "FullHierTable": [
-            [ "A", "AA", "", "", "" ],
-            [ "B", "BB", "", "", "" ],
+            [ "A", "AA", "AAA", "", "" ],
+            [ "B", "BB", "BBB", "", "" ],
             [ "", "", "", "", "" ],
             [ "", "", "", "", "" ],
             [ "", "", "", "", "" ]
@@ -184,6 +255,11 @@ def rowMatch(levelRow: pandas.DataFrame, matchRow: pandas.DataFrame) -> bool:
         if (levelRow.iloc[0, col] != openVal and levelRow.iloc[0, col] != matchRow.iloc[0, col]):
             return False
     return True
+
+
+def randString(numChars):
+    return ''.join(random.choices(string.ascii_uppercase, k=numChars))
+
 
 
 # Run simulation over different parameters
