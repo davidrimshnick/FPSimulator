@@ -29,14 +29,15 @@ effectTermSDPct = .1 # how big the effect differs in subcategories as percent of
 noiseSD = .001
 
 causesPerRun = [1, 3, 5]
-numRunsPerSetting = 1000
+numRunsPerSetting = 100
 solverMethods = ["GreedyTopDown", "GreedyBottomUp", "FPLP", "FPIteratedRegression"]
 modeNums = [2, 3, 5, 10]
 
-Hiers = [["A", "AA", "AAA"],["B", "BB", "BBB"]]
+#Hiers = [["A", "AA", "AAA"],["B", "BB", "BBB"]]
+Hiers = [["A", "AA"],["B", "BB"]]
 colNames = Hiers[0] + Hiers[1]
 openVal = "(Open)"
-firstDate = "1/1/2019"
+startDate = "1/1/2019"
 nextDate = "1/1/2020"
 randFieldSize = 10
 
@@ -48,12 +49,9 @@ RNG = numpy.random.default_rng(2022)
 ############
 
 baseDataDict = {}
-levelDict = {}
+LevelDict = {}
 
 def createBaseData():
-
-    baseDataDict = {}
-    levelDict = {}
 
     for m in modeNums:
 
@@ -93,22 +91,17 @@ def createBaseData():
             HiersLevelRows[hnum] = HierLevelRows
             HiersDataRows[hnum] = HierDataRows
 
-        baseDataRows = DictListCross(HiersLevelRows[0], HiersLevelRows[1])
-        levelRows = DictListCross(HiersDataRows[0], HiersDataRows[1])
+        baseDataRows = DictListCross(HiersDataRows[0], HiersDataRows[1])
+        levelRows = DictListCross(HiersLevelRows[0], HiersLevelRows[1])
 
 
         # create dataframes from list of dicts (https://www.geeksforgeeks.org/create-a-pandas-dataframe-from-list-of-dicts/)
 
         startDataDict = pd.DataFrame(baseDataRows)
         startDataDict["Units"] = 0
-
-        d1 = startDataDict.copy()
-        d2 = startDataDict.copy()
-        d1["Date"] = firstDate
-        d2["Date"] = nextDate
-        baseDataDict[m] = pd.concat([d1,d2],axis=0)
-
-        levelDict[m] = pd.DataFrame(levelRows)
+        startDataDict["Date"] = startDate
+        baseDataDict[m] = startDataDict
+        LevelDict[m] = pd.DataFrame(levelRows)
 
 
 
@@ -123,7 +116,7 @@ def createBaseData():
 
 
 # Simulation Module
-@timeout.timeout(10)
+@timeout.timeout(0)
 def runSimulation(numModes : int, numCauses : int) -> dict:
     # Create base settings dictionary, to be edited on each run
     theSettingDict =  {
@@ -136,8 +129,8 @@ def runSimulation(numModes : int, numCauses : int) -> dict:
         "CSVFilePath": "",
         "HierLabels": [ "H_A", "H_B"],
         "FullHierTable": [
-            [ "A", "AA", "AAA", "", "" ],
-            [ "B", "BB", "BBB", "", "" ],
+            [ "A", "AA", "", "", "" ],
+            [ "B", "BB", "", "", "" ],
             [ "", "", "", "", "" ],
             [ "", "", "", "", "" ],
             [ "", "", "", "", "" ]
@@ -266,6 +259,7 @@ def randString(numChars):
 totalRuns = numRunsPerSetting * len(modeNums) * len(causesPerRun) * len(solverMethods)
 i=0
 out_df = pandas.DataFrame(columns=["numModes", "numCauses", "method", "accuracy"])
+createBaseData()
 while i < totalRuns:
     for mn in modeNums:
         for c in causesPerRun:
