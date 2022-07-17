@@ -48,6 +48,7 @@ outPath = r"G:\My Drive\Scuba\test datasets\other testing\Python Experiments\raw
 ##### Shouldn't need to alter below
 Hiers = [[randString(5) for x in range(Hier1Size)],[randString(5) for x in range(Hier1Size)]]
 colNames = Hiers[0] + Hiers[1]
+numCols = len(colNames)
 openVal = "(Open)"
 startDate = "1/1/2019"
 nextDate = "1/1/2020"
@@ -241,7 +242,7 @@ def score_result(resultCSVpath : str, trueImpactDF : pandas.DataFrame) -> float:
     for i in range(len(trueImpactDF)):
         # Make description string to match whats in FP output
         desc = ""
-        for j in range(4): # exclude last column because its the impact one
+        for j in range(numCols): # exclude last column because its the impact one
             if trueImpactDF.iloc[i, j] != openVal:
                 if desc != "":
                     desc += " - "
@@ -258,7 +259,7 @@ def score_result(resultCSVpath : str, trueImpactDF : pandas.DataFrame) -> float:
 
 
 def rowMatch(levelRow: pandas.DataFrame, matchRow: pandas.DataFrame) -> bool:
-    for col in range(4):
+    for col in range(numCols):
         if (levelRow.iloc[0, col] != openVal and levelRow.iloc[0, col] != matchRow.iloc[0, col]):
             return False
     return True
