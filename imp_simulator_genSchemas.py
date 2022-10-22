@@ -29,13 +29,13 @@ FPConsolePath = r"G:\My Drive\Scuba\Publish Location\XPConsoleProfiles\win-x64\F
 startMean = 10000
 startSD = 2000
 effectSD = .05 # effect size small so interaction terms don't matter; centered at 0 and percent of original value as SD
-effectTermSDPct = .1 # how big the effect differs in subcategories as percent of effect
+effectTermSDPct = .2 # how big the effect differs in subcategories as percent of effect
 noiseSD = .001
 
 causesPerRun = [1, 3, 5]
-numRunsPerSetting = 100
+numRunsPerSetting = 50
 solverMethods = ["GreedyTopDown", "GreedyBottomUp", "FPLP", "FPIteratedRegression"]
-modeNums = [2, 3] #5
+modeNums = [2, 3, 5]
 Hier1Size = 3
 Hier2Size = 3
 
@@ -127,11 +127,8 @@ def createBaseData():
 
 
 
-
-
-
 # Simulation Module
-@timeout.timeout(200)
+@timeout.timeout(600)
 def runSimulation(numModes : int, numCauses : int) -> dict:
     # Create base settings dictionary, to be edited on each run
     theSettingDict =  {
@@ -197,7 +194,6 @@ def runSimulation(numModes : int, numCauses : int) -> dict:
 
         impactsdf.loc[ind, "Impact"] = totalCauseImpact
 
-    #df = df.append(df_next)
     df = pandas.concat([df,df_next], axis=0)
     df.to_csv(temp_in_csv.name, index=False)
 
