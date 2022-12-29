@@ -73,7 +73,7 @@ def runSimulation(numModes : int, numCauses : int) -> dict:
         ],
         "IsStaticAnalysis": False,
         "SolverMethodToUse": "",
-        "ProduceVerboseFactorCsv": True,
+        "CSVOutputType": "Verbose",
         "OutFilePath": ""
     }
 
