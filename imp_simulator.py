@@ -19,6 +19,7 @@ from shutil import copyfile
 ### Paramaters
 
 FPConsolePath = r"G:\My Drive\Scuba\Publish Location\XPConsoleProfiles\win-x64\FactorPrismConsoleXP.exe"
+DescDeLim = ":: "
 
 startMean = 10000
 startSD = 2000
@@ -27,7 +28,7 @@ effectTermSDPct = .1 # how big the effect differs in subcategories as percent of
 noiseSD = .001
 
 causesPerRun = [1, 3, 5]
-numRunsPerSetting = 1000
+numRunsPerSetting = 10 #1000
 solverMethods = ["GreedyTopDown", "GreedyBottomUp", "FPLP", "FPIteratedRegression"]
 modeNums = [2, 3]
 
@@ -140,12 +141,12 @@ def runSimulation(numModes : int, numCauses : int) -> dict:
 
         gc.collect()
         outDict[solverMethod] = score_result(temp_out_csv.name, impactsdf)
-
+        
         # Debugging
-        # copyfile(temp_out_csv.name, (r"Y:\Temp\out_" + solverMethod +".csv"))
+        #copyfile(temp_out_csv.name, (r"Z:\Temp\out_" + solverMethod +".csv"))        
 
     # Debugging
-    # impactsdf.to_csv(r"Y:\Temp\realimpacts.csv")
+    #impactsdf.to_csv(r"Z:\Temp\realimpacts.csv")
 
 
 
@@ -154,8 +155,9 @@ def runSimulation(numModes : int, numCauses : int) -> dict:
     os.unlink(temp_in_csv.name)
     os.unlink(temp_out_csv.name)
     os.unlink(temp_json.name)
-
+    
     return outDict
+
 
 
 
@@ -170,7 +172,7 @@ def score_result(resultCSVpath : str, trueImpactDF : pandas.DataFrame) -> float:
         for j in range(4): # exclude last column because its the impact one
             if trueImpactDF.iloc[i, j] != openVal:
                 if desc != "":
-                    desc += " - "
+                    desc += DescDeLim
                 desc += trueImpactDF.iloc[i, j]
         if (desc==""):
             desc="Overall"
