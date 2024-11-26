@@ -19,7 +19,6 @@ from shutil import copyfile
 ### Paramaters
 
 FPConsolePath = r"G:\My Drive\Scuba\Publish Location\XPConsoleProfiles\win-x64\FactorPrismConsoleXP.exe"
-DescDeLim = ":: "
 
 startMean = 10000
 startSD = 2000
@@ -28,7 +27,7 @@ effectTermSDPct = .1 # how big the effect differs in subcategories as percent of
 noiseSD = .001
 
 causesPerRun = [1, 3, 5]
-numRunsPerSetting = 10 #1000
+numRunsPerSetting = 100
 solverMethods = ["GreedyTopDown", "GreedyBottomUp", "FPLP", "FPIteratedRegression"]
 modeNums = [2, 3]
 
@@ -38,6 +37,7 @@ SchemaDict = {2: r"G:\My Drive\Scuba\test datasets\other testing\Python Experime
 LevelDictFiles = {2: r"G:\My Drive\Scuba\test datasets\other testing\Python Experiments\Levels_2Modes.csv",
                 3: r"G:\My Drive\Scuba\test datasets\other testing\Python Experiments\Levels_3Modes.csv"}
 
+DescDeLim = ":: "
 openVal = "(Open)"
 nextDate = "1/1/2020"
 
@@ -180,9 +180,12 @@ def score_result(resultCSVpath : str, trueImpactDF : pandas.DataFrame) -> float:
         trueImpact = trueImpactDF.loc[i, "Impact"].sum()
         thisImpact = resultDF[resultDF["Description"]==desc]["Net Impact"].sum() # sum() is cheap to_numeric
         if trueImpact != 0 and thisImpact !=0 and abs(trueImpact)/trueImpact == abs(thisImpact)/thisImpact: # need to go in same direction
-            capturedAbsImpact += min(abs(trueImpact), abs(thisImpact))
+            capturedAbsImpact += min(abs(trueImpact), abs(thisImpact))        
 
+    if totalAbsImpact == 0:
+        return 0  
     return capturedAbsImpact / totalAbsImpact
+
 
 
 def rowMatch(levelRow: pandas.DataFrame, matchRow: pandas.DataFrame) -> bool:
