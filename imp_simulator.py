@@ -12,6 +12,7 @@ import numpy
 import timeout
 import time
 import gc
+import traceback
 from shutil import copyfile
 
 ########
@@ -48,7 +49,10 @@ RNG = numpy.random.default_rng(2022)
 ############
 
 # Create base starting points
-baseDataDict = {2: pandas.read_csv(SchemaDict[2]), 3: pandas.read_csv(SchemaDict[3])}
+baseDataDict = {
+    2: pandas.read_csv(SchemaDict[2]).astype({"Units": "float64"}),
+    3: pandas.read_csv(SchemaDict[3]).astype({"Units": "float64"}),
+}
 LevelDict = {2: pandas.read_csv(LevelDictFiles[2]), 3: pandas.read_csv(LevelDictFiles[3])}
 
 # Simulation Module
@@ -73,7 +77,7 @@ def runSimulation(numModes : int, numCauses : int) -> dict:
         ],
         "IsStaticAnalysis": False,
         "SolverMethodToUse": "",
-        "CSVOutputType": "Verbose",
+        "CSVOutputType": "Legacy",
         "OutFilePath": ""
     }
 
@@ -202,8 +206,13 @@ while i < totalRuns:
                     out_df.loc[i,"method"] = meth
                     out_df.loc[i,"accuracy"] = simResult[meth]
                     i=i+1
-            except:
-                time.sleep(5) # to give database time to settle down
+            except Exception as e:
+                # Log the error details
+                print(f"Error occurred during run {i+1} (numModes={mn}, numCauses={c}):")
+                print(f"{type(e).__name__}: {e}")
+                # Print a detailed traceback for debugging
+                traceback.print_exc()
+                time.sleep(5)  # Allow some time for database or other processes to settle
                 continue
 
 out_df.to_csv(outPath)
