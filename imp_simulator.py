@@ -28,7 +28,7 @@ noiseSD = .001
 
 causesPerRun = [1, 3, 5]
 numRunsPerSetting = 100
-solverMethods = ["GreedyTopDown", "GreedyBottomUp", "FPLP", "FPIteratedRegression"]
+solverMethods = ["GreedyTopDown", "GreedyBottomUp", "FPLP", "FPIteratedRegression", "FPOrthMP"]
 modeNums = [2, 3]
 
 SchemaDict = {2: r"G:\My Drive\Scuba\test datasets\other testing\Python Experiments\Schema_2Modes.csv",
