@@ -27,7 +27,7 @@ effectTermSDPct = .1 # how big the effect differs in subcategories as percent of
 noiseSD = .001
 
 causesPerRun = [1, 3, 5]
-numRunsPerSetting = 100
+numRunsPerSetting = 10
 solverMethods = ["GreedyTopDown", "GreedyBottomUp", "FPLP", "FPIteratedRegression", "FPOrthMP"]
 modeNums = [2, 3]
 
@@ -75,8 +75,7 @@ def runSimulation(numModes : int, numCauses : int) -> dict:
             [ "", "", "", "", "" ],
             [ "", "", "", "", "" ],
             [ "", "", "", "", "" ]
-        ],
-        "IsStaticAnalysis": False,
+        ],        
         "SolverMethodToUse": "",
         "CSVOutputType": "Legacy",
         "OutFilePath": ""
