@@ -1,8 +1,6 @@
 # Simulate Hidden Causes
 # Measure FP ability to test versus greedy algorithms
 
-from asyncio.subprocess import DEVNULL
-from cgitb import reset
 import json
 import tempfile
 import os
@@ -13,7 +11,6 @@ import timeout
 import time
 import gc
 import traceback
-from shutil import copyfile
 
 ########
 ### Paramaters
@@ -27,7 +24,7 @@ effectTermSDPct = .1 # how big the effect differs in subcategories as percent of
 noiseSD = .001
 
 causesPerRun = [1, 3, 5]
-numRunsPerSetting = 10
+numRunsPerSetting = 100
 solverMethods = ["GreedyTopDown", "GreedyBottomUp", "FPLP", "FPIteratedRegression", "FPIteratedRegression_Log", "FPOrthMP"]
 modeNums = [2, 3]
 
@@ -59,8 +56,7 @@ LevelDict = {2: pandas.read_csv(LevelDictFiles[2]), 3: pandas.read_csv(LevelDict
 # Simulation Module
 @timeout.timeout(10)
 def runSimulation(numModes : int, numCauses : int) -> dict:
-    # Create base settings dictionary, to be edited on each run
-    theSettingDict =  {
+    theSettingDict = {
         "SelectedStartDateText": "2019-01-01",
         "SelectedEndDateText": "2020-01-01",
         "DateFieldName": "Date",
@@ -68,94 +64,93 @@ def runSimulation(numModes : int, numCauses : int) -> dict:
         "DataFieldName": "Units",
         "dataUnits": "Units",
         "CSVFilePath": "",
-        "HierLabels": [ "H_A", "H_B"],
+        "HierLabels": ["H_A", "H_B"],
         "FullHierTable": [
-            [ "A", "AA", "", "", "" ],
-            [ "B", "BB", "", "", "" ],
-            [ "", "", "", "", "" ],
-            [ "", "", "", "", "" ],
-            [ "", "", "", "", "" ]
-        ],        
+            ["A", "AA", "", "", ""],
+            ["B", "BB", "", "", ""],
+            ["", "", "", "", ""],
+            ["", "", "", "", ""],
+            ["", "", "", "", ""]
+        ],
         "SolverMethodToUse": "",
         "CSVOutputType": "Legacy",
         "OutFilePath": ""
     }
 
-    temp_in_csv = tempfile.NamedTemporaryFile(mode="r", delete=False, suffix=".csv", dir=tempLoc)
-    temp_in_csv.close()
-    temp_out_csv = tempfile.NamedTemporaryFile(mode="r", delete=False, suffix=".csv", dir=tempLoc)
-    temp_out_csv.close()
+    temp_in_csv = tempfile.NamedTemporaryFile(mode="w+", delete=False, suffix=".csv", dir=tempLoc)
+    temp_out_csv = tempfile.NamedTemporaryFile(mode="w+", delete=False, suffix=".csv", dir=tempLoc)
     temp_json = tempfile.NamedTemporaryFile(mode="w+", delete=False, suffix=".json", dir=tempLoc)
 
-    # Create Individual Run Data and Settings, Run FactorPrism, Tabulate Results
-
-    # Create starting data
-    df = baseDataDict[numModes].copy()
-    for i in range(len(df)):
-        df.loc[i, "Units"] = RNG.normal(startMean, startSD)
-    df_next = df.copy()
-    df_next["Date"] = nextDate
-    for i in range(len(df_next)):
-        df_next.loc[i, "Units"] *= (1 + RNG.normal(0, noiseSD))
-        df_next.loc[i, "Units"] = max(0, pandas.to_numeric(df_next.loc[i, "Units"]))
-
-    # Create effects, keep track of "actuals"
-    leveldf = LevelDict[numModes]
-    causeIndices = RNG.choice(len(leveldf), size=numCauses)
-
-    impactsdf = leveldf.copy()
-    impactsdf["Impact"] = 0.0
-
-    for ind in causeIndices:
-        causeLevel = leveldf.loc[[ind]]
-        causeImpactPct = RNG.normal(0, effectSD)
-        totalCauseImpact = 0.0
-
-        for i in range(len(df_next)):
-            if rowMatch(causeLevel, df_next.loc[[i]]):
-                # base_impact = df_next.loc[i, "Units"] * causeImpactPct
-                base_impact = df_next.loc[i, "Units"] * RNG.normal(causeImpactPct, abs(causeImpactPct) * effectTermSDPct)
-                newVal = max(0, pandas.to_numeric(df_next.loc[i, "Units"]) + base_impact)
-                impact = newVal - df_next.loc[i, "Units"] # in case it was truncated
-                df_next.loc[i, "Units"] =  newVal
-                totalCauseImpact += impact
-
-        impactsdf.loc[ind, "Impact"] = totalCauseImpact
-
-    #df = df.append(df_next)
-    df = pandas.concat([df,df_next], axis=0)
-    df.to_csv(temp_in_csv.name, index=False)
-
-    # Try for each solver method
-    outDict = {}
-    for solverMethod in solverMethods:
-        theSettingDict["CSVFilePath"] = r"" + temp_in_csv.name
-        theSettingDict["SolverMethodToUse"] = solverMethod
-        theSettingDict["OutFilePath"] = r"" + temp_out_csv.name
-        temp_json = open(temp_json.name, mode="w+")
-        json.dump(theSettingDict, temp_json)
-        temp_json.close()
-
-        subprocess.run(FPConsolePath + " " + temp_json.name)
-
-        gc.collect()
-        outDict[solverMethod] = score_result(temp_out_csv.name, impactsdf)
-        
-        # Debugging
-        #copyfile(temp_out_csv.name, (r"Z:\Temp\out_" + solverMethod +".csv"))        
-
-    # Debugging
-    #impactsdf.to_csv(r"Z:\Temp\realimpacts.csv")
-
-
-
-    # clean up files
+    temp_in_csv.close()
+    temp_out_csv.close()
     temp_json.close()
-    os.unlink(temp_in_csv.name)
-    os.unlink(temp_out_csv.name)
-    os.unlink(temp_json.name)
-    
-    return outDict
+
+    # Create Individual Run Data and Settings, Run FactorPrism, Tabulate Results
+    try:
+        # Create starting data
+        df = baseDataDict[numModes].copy()
+        df["Units"] = RNG.normal(startMean, startSD, size=len(df))
+
+        df_next = df.copy()
+        df_next["Date"] = nextDate
+        df_next["Units"] = (df_next["Units"] * (1 + RNG.normal(0, noiseSD, size=len(df_next)))).clip(lower=0)
+
+        # Create effects, keep track of "actuals"
+        leveldf = LevelDict[numModes]
+        levelColumns = leveldf.columns[:4]
+        causeIndices = RNG.choice(len(leveldf), size=numCauses)
+
+        impactsdf = leveldf.copy()
+        impactsdf["Impact"] = 0.0
+
+        for ind in numpy.atleast_1d(causeIndices):
+            causeLevel = leveldf.loc[ind]
+            causeImpactPct = RNG.normal(0, effectSD)
+
+            match_mask = pandas.Series(True, index=df_next.index)
+            for col in levelColumns:
+                val = causeLevel[col]
+                if val != openVal:
+                    match_mask &= df_next[col] == val
+
+            if not match_mask.any():
+                continue
+
+            per_row_effect = RNG.normal(
+                causeImpactPct,
+                abs(causeImpactPct) * effectTermSDPct,
+                size=match_mask.sum(),
+            )
+
+            current_units = df_next.loc[match_mask, "Units"]
+            new_units = (current_units * (1 + per_row_effect)).clip(lower=0)
+            df_next.loc[match_mask, "Units"] = new_units
+            impactsdf.loc[ind, "Impact"] = (new_units - current_units).sum()
+
+        df = pandas.concat([df, df_next], axis=0)
+        df.to_csv(temp_in_csv.name, index=False)
+
+        # Try for each solver method
+        outDict = {}
+        for solverMethod in solverMethods:
+            theSettingDict["CSVFilePath"] = r"" + temp_in_csv.name
+            theSettingDict["SolverMethodToUse"] = solverMethod
+            theSettingDict["OutFilePath"] = r"" + temp_out_csv.name
+            with open(temp_json.name, mode="w+", encoding="utf-8") as temp_json_file:
+                json.dump(theSettingDict, temp_json_file)
+
+            subprocess.run([FPConsolePath, temp_json.name], check=True)
+
+            gc.collect()
+            outDict[solverMethod] = score_result(temp_out_csv.name, impactsdf)
+
+        return outDict
+    finally:
+        for temp_path in (temp_in_csv.name, temp_out_csv.name, temp_json.name):
+            try:
+                os.unlink(temp_path)
+            except FileNotFoundError:
+                pass
 
 
 
@@ -164,59 +159,60 @@ def score_result(resultCSVpath : str, trueImpactDF : pandas.DataFrame) -> float:
     resultDF = pandas.read_csv(resultCSVpath)
     totalAbsImpact = trueImpactDF["Impact"].abs().sum()
 
-    capturedAbsImpact = 0.0
-    for i in range(len(trueImpactDF)):
-        # Make description string to match whats in FP output
-        desc = ""
-        for j in range(4): # exclude last column because its the impact one
-            if trueImpactDF.iloc[i, j] != openVal:
-                if desc != "":
-                    desc += DescDeLim
-                desc += trueImpactDF.iloc[i, j]
-        if (desc==""):
-            desc="Overall"
+    def build_desc(row: pandas.Series) -> str:
+        parts = [part for part in row.iloc[:4] if part != openVal]
+        return DescDeLim.join(parts) if parts else "Overall"
 
-        trueImpact = trueImpactDF.loc[i, "Impact"].sum()
-        thisImpact = resultDF[resultDF["Description"]==desc]["Net Impact"].sum() # sum() is cheap to_numeric
-        if trueImpact != 0 and thisImpact !=0 and abs(trueImpact)/trueImpact == abs(thisImpact)/thisImpact: # need to go in same direction
-            capturedAbsImpact += min(abs(trueImpact), abs(thisImpact))        
+    true_impact_with_desc = trueImpactDF.copy()
+    true_impact_with_desc["Description"] = trueImpactDF.apply(build_desc, axis=1)
+
+    net_by_desc = resultDF.groupby("Description")["Net Impact"].sum()
+    result_impacts = true_impact_with_desc["Description"].map(net_by_desc).fillna(0)
+
+    aligned = (
+        (true_impact_with_desc["Impact"] != 0)
+        & (result_impacts != 0)
+        & (numpy.sign(true_impact_with_desc["Impact"]) == numpy.sign(result_impacts))
+    )
+
+    capturedAbsImpact = numpy.where(
+        aligned,
+        numpy.minimum(true_impact_with_desc["Impact"].abs(), result_impacts.abs()),
+        0,
+    ).sum()
 
     if totalAbsImpact == 0:
-        return 0  
+        return 0
     return capturedAbsImpact / totalAbsImpact
-
-
-
-def rowMatch(levelRow: pandas.DataFrame, matchRow: pandas.DataFrame) -> bool:
-    for col in range(4):
-        if (levelRow.iloc[0, col] != openVal and levelRow.iloc[0, col] != matchRow.iloc[0, col]):
-            return False
-    return True
-
 
 # Run simulation over different parameters
 totalRuns = numRunsPerSetting * len(modeNums) * len(causesPerRun) * len(solverMethods)
-i=0
-out_df = pandas.DataFrame(columns=["numModes", "numCauses", "method", "accuracy"])
-while i < totalRuns:
+run_index = 0
+results = []
+for _ in range(numRunsPerSetting):
     for mn in modeNums:
         for c in causesPerRun:
-            print("----- Run " + str(i+1) + " of " + str(totalRuns) + ".")
+            print("----- Run " + str(run_index + 1) + " of " + str(totalRuns) + ".")
             try:
                 simResult = runSimulation(mn, c)
                 for meth in solverMethods:
-                    out_df.loc[i,"numModes"] = mn
-                    out_df.loc[i,"numCauses"] = c
-                    out_df.loc[i,"method"] = meth
-                    out_df.loc[i,"accuracy"] = simResult[meth]
-                    i=i+1
+                    results.append(
+                        {
+                            "numModes": mn,
+                            "numCauses": c,
+                            "method": meth,
+                            "accuracy": simResult[meth],
+                        }
+                    )
+                    run_index += 1
             except Exception as e:
                 # Log the error details
-                print(f"Error occurred during run {i+1} (numModes={mn}, numCauses={c}):")
+                print(f"Error occurred during run {run_index + 1} (numModes={mn}, numCauses={c}):")
                 print(f"{type(e).__name__}: {e}")
                 # Print a detailed traceback for debugging
                 traceback.print_exc()
                 time.sleep(5)  # Allow some time for database or other processes to settle
                 continue
 
-out_df.to_csv(outPath)
+out_df = pandas.DataFrame(results, columns=["numModes", "numCauses", "method", "accuracy"])
+out_df.to_csv(outPath, index=False)
