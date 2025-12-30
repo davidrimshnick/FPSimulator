@@ -2,7 +2,7 @@
 # ===========================
 
 # Path to FactorPrism console executable
-fpConsolePath: C:\Users\david\source\repos\FactorPrismGit\FactorPrismDesktopWF\FactorPrismConsoleXP\bin\Release\net8.0\FactorPrismConsoleXP.exe
+fpConsolePath: G:\My Drive\Scuba\Publish Location\XPConsoleProfiles\win-x64\FactorPrismConsoleXP.exe
 
 # Test Configurations
 # -------------------
