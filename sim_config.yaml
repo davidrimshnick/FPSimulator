@@ -1,0 +1,56 @@
+# FPSimulator Configuration
+# ===========================
+
+# Path to FactorPrism console executable
+fpConsolePath: C:\Users\david\source\repos\FactorPrismGit\FactorPrismDesktopWF\FactorPrismConsoleXP\bin\Release\net8.0\FactorPrismConsoleXP.exe
+
+# Test Configurations
+# -------------------
+# Each config defines a hierarchy structure to test:
+#   - numHierarchies: independent dimensions (e.g., 2 = Product + Geography)
+#   - levels: depth of each hierarchy (e.g., 2 = Category > SubCategory)
+#   - modes: children per node / branching factor
+#
+# Leaf count = (modes^levels) ^ numHierarchies
+# Examples:
+#   2 hier, 2 levels, 2 modes = (2^2)^2 = 16 leaves
+#   2 hier, 2 levels, 3 modes = (3^2)^2 = 81 leaves
+#   2 hier, 3 levels, 3 modes = (3^3)^2 = 729 leaves
+
+testConfigs:
+  - {numHierarchies: 2, levels: 2, modes: 2}  # 16 leaves - simple baseline
+  - {numHierarchies: 2, levels: 2, modes: 3}  # 81 leaves - medium complexity
+  # - {numHierarchies: 2, levels: 3, modes: 3}  # 729 leaves - complex (uncomment to test)
+  # - {numHierarchies: 3, levels: 2, modes: 2}  # 64 leaves - 3 dimensions
+  # - {numHierarchies: 2, levels: 4, modes: 2}  # 256 leaves - deep hierarchy
+
+# Solvers to test
+solverMethods:
+  - GreedyTopDown
+  - GreedyBottomUp
+  - FPLP
+  - FPIteratedRegression
+  - FPIteratedRegression_Log
+  - FPOrthMP
+
+# Number of hidden causes to inject per simulation
+causesPerRun: [1, 3, 5]
+
+# How many simulation runs per configuration
+numRunsPerSetting: 10
+
+# Timeout per solver run in seconds (increase for complex configs)
+timeoutSeconds: 10
+
+# Simulation parameters (tuned defaults - adjust if needed)
+simulationParams:
+  startMean: 10000      # baseline unit value
+  startSD: 2000         # variation in baseline
+  effectSD: 0.05        # effect size (as % of value)
+  effectTermSDPct: 0.1  # variation in effect across rows
+  noiseSD: 0.001        # random noise between periods
+  randomSeed: 2022      # for reproducibility
+
+# Output settings
+outputPath: C:\Users\david\OneDrive\Desktop\simOut.csv
+tempDirectory: Z:\TEMP
